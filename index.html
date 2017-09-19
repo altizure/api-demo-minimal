@@ -8,6 +8,15 @@
     <script>
       const key = '7MkQf8UggsPaadvrlKALspJWZejZAJOLHn3cnIy'
       const callback = 'https://altizure.github.io/api-demo-minimal/index.html'
+      
+      function randomState (length) {
+        let text = ''
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for(let i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length))
+        }
+        return text
+      }
 
       function setCookie (name, value, days) {
         let expires = ''
@@ -94,8 +103,10 @@
 
       const tokenHash = tokenFromHash()
       const tokenCookie = getCookie('token')
-      const authUrl = `https://api.altizure.com/auth/start?client_id=${key}&response_type=token&redirect_uri=${callback}`
       if (!tokenHash && !tokenCookie) {
+        const state = randomState(10) 
+        setCookie('state', state)
+        const authUrl = `https://api.altizure.com/auth/start?client_id=${key}&response_type=token&redirect_uri=${callback}&state=${state}`
         document.getElementById('main').innerHTML = `
           <h1>Altizure API Demo App</h1>
           <button type='reset' onclick="location.href='${authUrl}'">
