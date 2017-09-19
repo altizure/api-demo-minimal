@@ -36,15 +36,17 @@
         }
       }
 
-      function tokenFromHash () {
+      function tokenStateFromHash () {
         let token = ''
+        let state = ''
         const hash = window.location.hash
-        const re = /access_token=(\w+)/g
+        const re = /access_token=(\w+).*state=(\w+)/g
         const mat = re.exec(hash)
-        if (mat && mat[1]) {
+        if (mat && mat[1] && mat[2]) {
           token = mat[1]
+          state = mat[2]
         }
-        return token
+        return { token, state }
       }
 
       function onLogout () {
@@ -101,23 +103,34 @@
         })
       }
 
-      const tokenHash = tokenFromHash()
       const tokenCookie = getCookie('token')
-      if (!tokenHash && !tokenCookie) {
-        const state = randomState(10) 
-        setCookie('state', state)
-        const authUrl = `https://api.altizure.com/auth/start?client_id=${key}&response_type=token&redirect_uri=${callback}&state=${state}`
-        document.getElementById('main').innerHTML = `
-          <h1>Altizure API Demo App</h1>
-          <button type='reset' onclick="location.href='${authUrl}'">
-            Login with Altizure account
-          </button>
-        `
-      } else {
-        if (tokenHash) {
-          setCookie('token', tokenHash, 90)
+      if (!tokenCookie) {
+        // not login
+        const { token, state } = tokenStateFromHash()
+        if (token && state) {
+          // callback
+          const prevState = getCookie('state')
+          if (state !== prevState) {
+            document.getElementById('main').innerHTML = '<h1>Invalid state!</h1>'
+          } else {
+            setCookie('token', token, 90)
+            window.location = `${window.location.origin}/${window.location.pathname}`
+            renderProjectNames(token)
+          }
+        } else {
+          // render auth button
+          const state = randomState(20) 
+          setCookie('state', state)
+          const authUrl = `https://api.altizure.com/auth/start?client_id=${key}&response_type=token&redirect_uri=${callback}&state=${state}`
+          document.getElementById('main').innerHTML = `
+            <h1>Altizure API Demo App</h1>
+            <button type='reset' onclick="location.href='${authUrl}'">
+              Login with Altizure account
+            </button>
+          `
         }
-        renderProjectNames(tokenHash || tokenCookie)
+      } else {
+        renderProjectNames(tokenCookie)
       }
     </script>
   </body>
